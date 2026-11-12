@@ -6,6 +6,7 @@ import { Loading } from './components/States';
 import { LiveProvider } from './live/LiveContext';
 import { DashboardPage } from './pages/DashboardPage';
 import { FleetPage } from './pages/FleetPage';
+import { JournalPage } from './pages/JournalPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RulesPage } from './pages/RulesPage';
@@ -65,6 +66,7 @@ export function App() {
         />
         <Route path="regles" element={<RulesPage />} />
         <Route path="utilisateurs" element={<UsersPage />} />
+        <Route path="journal" element={<JournalPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
