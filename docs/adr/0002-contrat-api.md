@@ -1,7 +1,7 @@
 # ADR 0002 — Contrat d'API commun aux apps
 
 - Statut : accepté
-- Date : 2026-11-12
+- Date : 2026-11-12 (complété le même jour : passerelle, photos, clés)
 
 ## Contexte
 
@@ -108,7 +108,7 @@ Event = { id, ts, type: 'reading' | 'joined' | 'online' | 'offline' | 'command' 
 
 | Méthode | Route | Corps / paramètres | Réponse | Accès |
 | --- | --- | --- | --- | --- |
-| GET | `/photos` | `?after=<id>&mine=1` | `Photo[]` (plus récent d'abord) | guest, host, admin |
+| GET | `/photos` | `?after=<id>&mine=1&limit=30` | `Photo[]` (plus récent d'abord ; `after` = photos plus anciennes que cet id ; page de 30 par défaut, page vide = fin) | guest, host, admin |
 | POST | `/photos` | multipart : `photo` (JPEG), `source` (`booth` \| `guest`) | `{ id, url }` | booth, guest |
 | DELETE | `/photos/:id` | — | 204 | auteur, host, admin |
 
@@ -116,14 +116,14 @@ Event = { id, ts, type: 'reading' | 'joined' | 'online' | 'offline' | 'command' 
 Photo = { id, url, thumbUrl, source: 'booth' | 'guest', authorName: string | null, mine: boolean, createdAt }
 ```
 
-Pour une photo de la borne, `url` est la page publique de la photo : c'est elle qui est encodée dans le QR.
+`url` est l'adresse publique de l'image JPEG elle-même (pas une page) : c'est elle qui est encodée dans le QR de la borne, et elle sert à l'affichage plein écran et à l'enregistrement sur le téléphone. `thumbUrl` est une miniature (côté long 480 px).
 
 ### Clés d'API des bornes
 
 | Méthode | Route | Réponse | Accès |
 | --- | --- | --- | --- |
 | GET | `/api-keys` | `{ id, name, createdAt, lastUsedAt }[]` | admin |
-| POST | `/api-keys` | `{ id, name, key }` — `key` n'est renvoyée qu'une fois | admin |
+| POST | `/api-keys` | corps `{ name }` → `{ id, name, key }` — `key` n'est renvoyée qu'une fois | admin |
 | DELETE | `/api-keys/:id` | 204 | admin |
 
 ### Notifications push
@@ -146,6 +146,39 @@ WebSocket `/ws?token=<jeton>` (le jeton peut être une clé de borne). Le serveu
 | `photo.created` | `Photo` | guest, host, admin |
 | `photo.deleted` | `{ id }` | guest, host, admin |
 | `booth.countdown` / `booth.sleep` / `booth.wake` | `{}` | booth |
+
+### Terminal (passerelle du Raspberry Pi)
+
+Le terminal s'authentifie avec sa clé propre (`Authorization: Bearer <clé terminal>`). Les fronts ne parlent jamais au terminal : tout passe par l'API.
+
+| Méthode | Route | Corps | Réponse |
+| --- | --- | --- | --- |
+| POST | `/terminal/heartbeat` | `{}` | `{ ok: true }` — à envoyer toutes les 30 s ; sans battement depuis 90 s, le terminal passe hors ligne |
+| PUT | `/terminal/devices` | `{ devices: [{ ieee, model, vendor?, description?, capabilities: Capability[] }] }` — liste complète, déduite des `exposes` de Zigbee2MQTT | `Device[]` — un appareil inconnu est créé (`device.joined`), un appareil absent n'est pas supprimé |
+| POST | `/terminal/events` | `{ events: TerminalEvent[] }` — un ou plusieurs événements (file locale renvoyée au retour du réseau) | `{ accepted: number }` |
+
+```ts
+TerminalEvent = {
+  terminal: string,        // id du terminal
+  device: string,          // adresse ieee
+  model: string,
+  readings: Record<string, boolean | number | string | null>,
+  ts: string,
+}
+```
+
+Commandes vers le terminal, sur le WebSocket `/ws?token=<clé terminal>` :
+
+| Type | `data` | Action attendue de la passerelle |
+| --- | --- | --- |
+| `terminal.command` | `{ commandId, ieee, capability, value }` | publier `zigbee2mqtt/<appareil>/set` ; l'état réel revient ensuite par `/terminal/events` |
+| `terminal.permit_join` | `{ seconds }` | publier `zigbee2mqtt/bridge/request/permit_join` `{"time": seconds}` |
+
+`POST /devices/:id/commands` attend jusqu'à 5 s le retour d'état réel de l'appareil, puis répond avec le `Device` (504 si le terminal ne répond pas).
+
+### Amorçage
+
+Il n'y a pas encore d'écran pour créer un événement ou un terminal. Au démarrage, l'API crée s'ils n'existent pas : le compte administrateur (`ADMIN_EMAIL`, `ADMIN_PASSWORD`), le terminal (`TERMINAL_ID`, `TERMINAL_KEY`) et l'événement en cours (`EVENT_NAME`, `EVENT_CODE`).
 
 ## Conséquences
 
