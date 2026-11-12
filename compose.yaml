@@ -9,8 +9,5 @@ services:
         VITE_API_URL: ${VITE_API_URL:-https://api.live.manora-photo.fr}
     container_name: manora-live-backoffice
     restart: unless-stopped
-    # Réseau bridge par défaut : le site statique ne parle à aucun autre conteneur,
-    # et les plages d'adresses Docker du VPS sont épuisées (pas de nouveau réseau possible).
-    network_mode: bridge
     ports:
       - "127.0.0.1:10016:80"
