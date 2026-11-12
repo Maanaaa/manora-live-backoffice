@@ -1,11 +1,16 @@
+import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { useAuth } from './auth/AuthContext';
 import { Layout } from './components/Layout';
 import { Loading } from './components/States';
 import { LiveProvider } from './live/LiveContext';
 import { DashboardPage } from './pages/DashboardPage';
+import { FleetPage } from './pages/FleetPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+
+// La fiche appareil embarque Recharts : chargée à la demande.
+const DevicePage = lazy(() => import('./pages/DevicePage').then((m) => ({ default: m.DevicePage })));
 
 /** Zone protégée : réservée aux administrateurs connectés. */
 function RequireAdmin() {
@@ -47,6 +52,15 @@ export function App() {
       <Route path="/connexion" element={<LoginPage />} />
       <Route element={<RequireAdmin />}>
         <Route index element={<DashboardPage />} />
+        <Route path="parc" element={<FleetPage />} />
+        <Route
+          path="parc/appareils/:id"
+          element={
+            <Suspense fallback={<Loading />}>
+              <DevicePage />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
