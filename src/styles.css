@@ -152,8 +152,11 @@ a {
 }
 
 .sidebar .logo {
-  filter: brightness(0) invert(1);
+  /* Logo en couleurs, posé sur une pastille claire pour rester lisible sur le fond encre. */
   width: 150px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 14px;
+  background: var(--paper);
 }
 
 .sidebar-subtitle {
