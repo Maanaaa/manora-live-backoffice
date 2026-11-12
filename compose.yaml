@@ -1,0 +1,13 @@
+name: manora-live-backoffice
+
+services:
+  backoffice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api.live.manora-photo.fr}
+    container_name: manora-live-backoffice
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:10016:80"
