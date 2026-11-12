@@ -4,6 +4,7 @@ import { useAuth } from './auth/AuthContext';
 import { Layout } from './components/Layout';
 import { Loading } from './components/States';
 import { LiveProvider } from './live/LiveContext';
+import { ApiKeysPage } from './pages/ApiKeysPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { FleetPage } from './pages/FleetPage';
 import { JournalPage } from './pages/JournalPage';
@@ -67,6 +68,7 @@ export function App() {
         <Route path="regles" element={<RulesPage />} />
         <Route path="utilisateurs" element={<UsersPage />} />
         <Route path="journal" element={<JournalPage />} />
+        <Route path="cles" element={<ApiKeysPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
