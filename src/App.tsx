@@ -3,6 +3,7 @@ import { useAuth } from './auth/AuthContext';
 import { Layout } from './components/Layout';
 import { Loading } from './components/States';
 import { LiveProvider } from './live/LiveContext';
+import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
@@ -45,6 +46,7 @@ export function App() {
     <Routes>
       <Route path="/connexion" element={<LoginPage />} />
       <Route element={<RequireAdmin />}>
+        <Route index element={<DashboardPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
