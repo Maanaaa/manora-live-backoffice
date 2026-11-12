@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { FleetPage } from './pages/FleetPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { RulesPage } from './pages/RulesPage';
 
 // La fiche appareil embarque Recharts : chargée à la demande.
 const DevicePage = lazy(() => import('./pages/DevicePage').then((m) => ({ default: m.DevicePage })));
@@ -61,6 +62,7 @@ export function App() {
             </Suspense>
           }
         />
+        <Route path="regles" element={<RulesPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
