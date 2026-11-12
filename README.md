@@ -60,3 +60,13 @@ docs/adr/      décisions d'architecture
 
 - [Décisions d'architecture](docs/adr/README.md)
 - [Contrat d'API](docs/adr/0002-contrat-api.md)
+
+## Déploiement
+
+En ligne sur **https://admin.live.manora-photo.fr** (VPS, stack Portainer `manora-live-backoffice`). Chaque fusion sur `main` redéploie le site une fois la CI réussie. Détails dans l'[ADR 0005](docs/adr/0005-deploiement.md).
+
+Pour construire l'image en local :
+
+```bash
+docker compose up -d --build   # http://127.0.0.1:10016
+```
