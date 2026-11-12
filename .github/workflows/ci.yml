@@ -1,0 +1,101 @@
+name: CI
+
+# CI du back-office, reprise de celle de l'app mobile (manora-live-mobile) :
+# qualité (lint, types, tests), sécurité (CVE, secrets), puis SonarCloud si configuré.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------- Qualité ----------
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: >
+          node --test
+          --test-reporter=spec --test-reporter-destination=stdout
+          --test-reporter=junit --test-reporter-destination=junit.xml
+          tests/*.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: junit
+          path: junit.xml
+
+  # ---------- Sécurité ----------
+  # Failles connues des dépendances (base OSV). Informatif, ne bloque pas.
+  osv-scanner:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: OSV-Scanner
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src ghcr.io/google/osv-scanner:latest \
+            scan --lockfile=package-lock.json
+
+  # Détection de secrets commités (équivalent du template Secret-Detection de GitLab).
+  secret-detection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------- Qualité de code : SonarCloud ----------
+  # Ne tourne que si le secret SONAR_TOKEN est défini dans le dépôt.
+  sonarqube:
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        if: env.SONAR_TOKEN != ''
+        with:
+          fetch-depth: 0
+      - uses: SonarSource/sonarqube-scan-action@v5
+        if: env.SONAR_TOKEN != ''
+        with:
+          args: -Dsonar.qualitygate.wait=true
+        env:
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
